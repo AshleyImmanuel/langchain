@@ -220,3 +220,34 @@ async def test_inmemory_call_embeddings_async() -> None:
     # Ensure the async embedding function is called
     assert embeddings_mock.aembed_documents.await_count == 1
     assert embeddings_mock.aembed_query.await_count == 1
+
+
+async def test_inmemory_add_empty_ids_raises() -> None:
+    """Test that passing an empty ids list for non-empty input raises ValueError."""
+    store = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=3))
+
+    # Sync add_texts
+    with pytest.raises(ValueError, match="ids must be the same length as texts"):
+        store.add_texts(["foo"], ids=[])
+
+    # Async aadd_texts
+    with pytest.raises(ValueError, match="ids must be the same length as texts"):
+        await store.aadd_texts(["foo"], ids=[])
+
+    # Sync add_documents
+    with pytest.raises(ValueError, match="ids must be the same length as texts"):
+        store.add_documents([Document(page_content="foo")], ids=[])
+
+    # Async aadd_documents
+    with pytest.raises(ValueError, match="ids must be the same length as texts"):
+        await store.aadd_documents([Document(page_content="foo")], ids=[])
+
+
+async def test_inmemory_add_empty_input_with_empty_ids() -> None:
+    """Test that passing an empty ids list with empty inputs succeeds."""
+    store = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=3))
+
+    assert store.add_texts([], ids=[]) == []
+    assert await store.aadd_texts([], ids=[]) == []
+    assert store.add_documents([], ids=[]) == []
+    assert await store.aadd_documents([], ids=[]) == []
